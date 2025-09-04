@@ -10,17 +10,10 @@ Welcome, hackers! This repository is the official starter kit and resource hub f
 
 ### Quick Navigation
 
-- [Nano Banana 48 Hour Challenge: Official Toolkit 🍌](#nano-banana-48-hour-challenge-official-toolkit-)
-    - [Quick Navigation](#quick-navigation)
   - [🚀 Get Started in 3 Steps](#-get-started-in-3-steps)
   - [🛠️ Technical Resources](#️-technical-resources)
   - [🏆 Submission \& Judging](#-submission--judging)
-    - [How to Submit](#how-to-submit)
-    - [Submission Requirements](#submission-requirements)
-    - [Judging Criteria](#judging-criteria)
   - [🗓️ Timeline \& Prizes](#️-timeline--prizes)
-    - [💰 Prizes](#-prizes)
-    - [⏳ Key Dates](#-key-dates)
   - [💬 Getting Help \& Discussion](#-getting-help--discussion)
 
 ## 🚀 Get Started in 3 Steps
