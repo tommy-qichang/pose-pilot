@@ -19,10 +19,10 @@ Welcome, hackers! This repository is the official starter kit and resource hub f
 ## 🚀 Get Started in 3 Steps
 
 1.  **Get Your Free API Key**
-    *   Follow the **[API Key Guide](./guides/01-getting-your-api-key.ipynb)** included in this repo to get your exclusive access to the Gemini API. This is only available for the 48-hour competition window!
+    *   Follow the **[API Key Guide](./guides/01-getting-your-api-key.ipynb)** to create your API key to access Nano Banana on the Gemini API. 
 
 2.  **Explore the Resources**
-    *   Clone this repository to access the starter kits and code examples. Then, check out the external links for inspiration and documentation.
+    *   Clone this repository to access the starter kits and code examples, check out the external links for inspiration and documentation.
 
 3.  **Submit Your Project on Kaggle**
     *   When you're ready, head over to the **[Official Kaggle Competition Page](https://www.kaggle.com/competitions/banana)** to submit your project before the deadline.
