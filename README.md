@@ -14,8 +14,6 @@ Welcome, hackers! This repository is the official starter kit and resource hub f
     - [Quick Navigation](#quick-navigation)
   - [🚀 Get Started in 3 Steps](#-get-started-in-3-steps)
   - [🛠️ Technical Resources](#️-technical-resources)
-    - [In This Repository](#in-this-repository)
-    - [External Resources \& Links](#external-resources--links)
   - [🏆 Submission \& Judging](#-submission--judging)
     - [How to Submit](#how-to-submit)
     - [Submission Requirements](#submission-requirements)
@@ -28,7 +26,7 @@ Welcome, hackers! This repository is the official starter kit and resource hub f
 ## 🚀 Get Started in 3 Steps
 
 1.  **Get Your Free API Key**
-    *   Follow the **[API Key Guide](./guides/01-getting-your-api-key.md)** included in this repo to get your exclusive access to the Gemini API. This is only available for the 48-hour competition window!
+    *   Follow the **[API Key Guide](./guides/01-getting-your-api-key.ipynb)** included in this repo to get your exclusive access to the Gemini API. This is only available for the 48-hour competition window!
 
 2.  **Explore the Resources**
     *   Clone this repository to access the starter kits and code examples. Then, check out the external links for inspiration and documentation.
@@ -39,15 +37,10 @@ Welcome, hackers! This repository is the official starter kit and resource hub f
 
 ## 🛠️ Technical Resources
 
-This section is divided into what you'll find inside this repository and essential external links.
-
-### In This Repository
-*   **[./examples/01-getting-your-api-key.ipynb](./examples/01-getting-your-api-key.ipynb)**: **(START HERE)** Step-by-step instructions to get your free Gemini API key and generate a first image with nano banana using Python.
+*   **[START HERE: Getting Your API Key](./examples/01-getting-your-api-key.ipynb)**: Step-by-step instructions to get your free Gemini API key and generate a first image with nano banana using Python.
 *   **[`starter-kits/`](./starter-kits/)**: Ready-to-use project templates to get you building immediately.
 *   **[`examples/`](./examples/)**: Self-contained code snippets demonstrating specific features of the Gemini API.
     *  [JavaScript Getting Started](./examples/javascript-getting-started.md)
-
-### External Resources & Links
 *   🌐 **Official Nano Banana Gemini API Docs**: https://ai.google.dev/gemini-api/docs/image-generation
 *   ✍️ **Prompting Guide & Strategies**: https://ai.google.dev/gemini-api/docs/image-generation#prompt-guide
 *   🍳 **Cookbooks (Advanced Recipes)**:
