@@ -6,7 +6,7 @@
 
 Welcome, hackers! This repository is the official starter kit and resource hub for the [**Nano Banana 48 Hour Challenge**](https://www.kaggle.com/competitions/banana), hosted by **Google DeepMind**. Everything you need to get started, build something incredible, and submit your project is right here.
 
-**Go Bananas!** For 48 hours, starting **September 6, 2025**, we are unlocking an expanded free tier of the Gemini API, putting **Gemini 2.5 Flash Image Preview** (aka Nano Banana) into your hands. We challenge you to build an application that leverages its unique capabilities to solve a creative, commercial, or educational problem.
+**Go Bananas!** For 48 hours, starting **September 6, 2025** at **0:01AM UTC**, we are unlocking an expanded free tier of the Gemini API, putting **Gemini 2.5 Flash Image Preview** (aka Nano Banana) into your hands. We challenge you to build an application that leverages its unique capabilities to solve a creative, commercial, or educational problem.
 
 ### Quick Navigation
 
