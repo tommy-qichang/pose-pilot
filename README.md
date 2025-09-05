@@ -1,4 +1,4 @@
-# Nano Banana 48 Hour Challenge: Official Toolkit 🍌
+<img width="877" height="1110" alt="image" src="https://github.com/user-attachments/assets/a22fda61-a4c0-4163-8550-66925a965bc8" /># Nano Banana 48 Hour Challenge: Official Toolkit 🍌
 
 <p align="center">
   <img src="./assets/header.png" alt="Nano Banana Hackathon Banner" width="600"/>
@@ -57,6 +57,25 @@ Consider applications that:
     *   [Home Canvas](https://aistudio.google.com/apps/bundled/home_canvas)
     *   [Past Forward](https://aistudio.google.com/apps/bundled/past_forward)
     *   [PixShop](https://aistudio.google.com/apps/bundled/pixshop)
+
+### Partner Resources 🤝
+
+Explore the tools and platforms from our partners to enhance your project.
+
+#### ElevenLabs
+
+*   [Get started with the ElevenLabs API](https://elevenlabs.io/docs/quickstart)
+*   [Get started with ElevenLabs Agents](https://elevenlabs.io/docs/agents-platform/overview)
+*   [Show us your projects](https://showcase.elevenlabs.io/)
+*   [Follow for updates on X](https://x.com/ElevenLabsDevs)
+*   [Watch on YouTube](https://www.youtube.com/@elevenlabsio)
+
+#### fal.ai
+
+*   Create an account at [fal.ai](https://fal.ai/?utm_source=chatgpt.com)
+*   Generate your API [Keys](https://fal.ai/dashboard/keys) after logging in
+*   Start building: JavaScript and Python snippets can be found [here](https://docs.fal.ai/model-apis/quickstart?utm_source=chatgpt.com)
+
 
 
 ## 🏆 Submission & Judging
