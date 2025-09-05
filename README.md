@@ -1,5 +1,3 @@
-<img width="877" height="1110" alt="image" src="https://github.com/user-attachments/assets/a22fda61-a4c0-4163-8550-66925a965bc8" /># Nano Banana 48 Hour Challenge: Official Toolkit 🍌
-
 <p align="center">
   <img src="./assets/header.png" alt="Nano Banana Hackathon Banner" width="600"/>
 </p>
