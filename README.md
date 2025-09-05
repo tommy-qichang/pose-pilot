@@ -25,7 +25,7 @@ Nano Banana is about dynamic creation. Edit with words, blend realities, and acc
     *   Follow the **[API Key Guide](./guides/01-getting-your-api-key.ipynb)** to create your API key to access Nano Banana on the Gemini API. 
 
 2.  **Explore the Resources**
-    *   Clone this repository to access the starter kits and code examples, check out the external links for inspiration and documentation.
+    *   Clone this repository to access code examples and check out the external links for inspiration and documentation.
 
 3.  **Submit Your Project on Kaggle**
     *   When you're ready, head over to the **[Official Kaggle Competition Page](https://www.kaggle.com/competitions/banana)** to submit your project before the deadline.
@@ -45,7 +45,6 @@ Consider applications that:
 
 *   **[START HERE: Getting Your API Key](./guides/01-getting-your-api-key.ipynb)**: Step-by-step instructions to get your free Gemini API key and generate a first image with nano banana using Python.
     *   **[Use Nano banana](./guides/02-use-nano-banana.ipynb)**: Learn of the different ways to use nano banana, to generate and edit images.   
-*   **[`starter-kits/`](./starter-kits/)**: Ready-to-use project templates to get you building immediately.
 *   **[`examples/`](./examples/)**: Self-contained code snippets demonstrating specific features of the Gemini API.
     *  [JavaScript Getting Started](./examples/javascript-getting-started.md)
 *   🌐 **Official Nano Banana Gemini API Docs**: https://ai.google.dev/gemini-api/docs/image-generation
