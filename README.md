@@ -117,7 +117,7 @@ Compete for your share of over **$400,000 in prizes**!
 *   **Winner**: 22M ElevenLabs Credits (6 months of Scale, Approx value: $4,000)
 
 ### ⏳ Key Dates
-*   **Competition Starts**: September 6, 2025 (12:01am UTC, 5:00 PM PT)
+*   **Competition Starts**: September 6, 2025 (12:01am UTC, September 5, 2025 5:00 PM PT)
 *   **Final Submission Deadline**: September 7, 2025 (4:59 PM UTC, 11:59 PM PT)
 *   **Judging Period**: September 8 - 17, 2025
 *   **Winners Announced**: September 19, 2025 (Estimated)
