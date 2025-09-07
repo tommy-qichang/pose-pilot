@@ -1,0 +1,22 @@
+{
+  "name": "Pose Pilot - AI Photo Guidance",
+  "short_name": "Pose Pilot",
+  "description": "AI-powered pose recommendation and real-time photo guidance",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iNDgiIGZpbGw9InVybCgjZ3JhZGllbnQwX2xpbmVhcl8xXzEpIi8+CjxwYXRoIGQ9Ik05NiA0OEMxMTcuNTM5IDQ4IDEzNSA2NS40NjA5IDEzNSA4N0MxMzUgMTA4LjUzOSAxMTcuNTM5IDEyNiA5NiAxMjZDNzQuNDYwOSAxMjYgNTcgMTA4LjUzOSA1NyA4N0M1NyA2NS40NjA5IDc0LjQ2MDkgNDggOTYgNDhaIiBmaWxsPSJ3aGl0ZSIvPgo8cGF0aCBkPSJNNzIgMTQ0SDE0NEMxNTAuNjI3IDE0NCAxNTYgMTQ5LjM3MyAxNTYgMTU2QzE1NiAxNjIuNjI3IDE1MC42MjcgMTY4IDE0NCAxNjhINzJDNjUuMzczIDE2OCA2MCAxNjIuNjI3IDYwIDE1NkM2MCAxNDkuMzczIDY1LjM3MyAxNDQgNzIgMTQ0WiIgZmlsbD0id2hpdGUiLz4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZGllbnQwX2xpbmVhcl8xXzEiIHgxPSIwIiB5MT0iMCIgeDI9IjE5MiIgeTI9IjE5MiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjNjY3RUVBIi8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzc2NEJBMiIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI1MTIiIGhlaWdodD0iNTEyIiByeD0iMTI4IiBmaWxsPSJ1cmwoI2dyYWRpZW50MF9saW5lYXJfMV8xKSIvPgo8cGF0aCBkPSJNMjU2IDEyOEMzMTQuNjk0IDEyOCAzNjIgMTc1LjMwNiAzNjIgMjM0QzM2MiAyOTIuNjk0IDMxNC42OTQgMzQwIDI1NiAzNDBDMTk3LjMwNiAzNDAgMTUwIDI5Mi42OTQgMTUwIDIzNEMxNTAgMTc1LjMwNiAxOTcuMzA2IDEyOCAyNTYgMTI4WiIgZmlsbD0id2hpdGUiLz4KPHBhdGggZD0iTTE5MiAzODRIMzg0QzQwMC41NjkgMzg0IDQxNCAzOTcuNDMxIDQxNCA0MTRDNDE0IDQzMC41NjkgNDAwLjU2OSA0NDQgMzg0IDQ0NEgxOTJDMTc1LjQzMSA0NDQgMTYyIDQzMC41NjkgMTYyIDQxNEMxNjIgMzk3LjQzMSAxNzUuNDMxIDM4NCAxOTIgMzg0WiIgZmlsbD0id2hpdGUiLz4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0iZ3JhZGllbnQwX2xpbmVhcl8xXzEiIHgxPSIwIiB5MT0iMCIgeDI9IjUxMiIgeTI9IjUxMiIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjNjY3RUVBIi8+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzc2NEJBMiIvPgo8L2xpbmVhckdyYWRpZW50Pgo8L2RlZnM+Cjwvc3ZnPgo=",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

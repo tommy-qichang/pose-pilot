@@ -1,8 +1,29 @@
-<p align="center">
-  <img src="./assets/header.png" alt="Nano Banana Hackathon Banner" width="600"/>
-</p>
+# 📸 Pose Pilot - AI Photo Guidance
 
-Welcome, hackers! This repository is the official starter kit and resource hub for the [**Nano Banana 48 Hour Challenge**](https://www.kaggle.com/competitions/banana), hosted by **Google DeepMind**. Everything you need to get started, build something incredible, and submit your project is right here.
+**A mobile web app for AI-powered pose recommendation and real-time photo guidance**
+
+Built for the [**Nano Banana 48 Hour Challenge**](https://www.kaggle.com/competitions/banana) using ChatGPT and Nano Banana APIs.
+
+## ✨ Features
+
+- 📱 **Mobile-First Design** - Optimized for iPhone Safari and mobile browsers
+- 📷 **Camera Integration** - Front/back camera support with photo capture
+- 🤖 **AI-Powered Analysis** - ChatGPT analyzes your photos and provides detailed suggestions
+- 🎨 **Visual Examples** - Nano Banana generates improved photo examples
+- 💡 **5 Key Suggestions** per photo:
+  - Camera View & Position
+  - Object Interaction
+  - Lighting & Exposure  
+  - Background & Depth
+- 🚀 **PWA Support** - Install as an app on your phone
+- 🔒 **Privacy-First** - API keys stored locally, photos processed client-side
+
+## 🎯 Perfect For
+
+- Photography enthusiasts wanting to improve their skills
+- Content creators seeking better composition
+- Social media users looking for professional-quality photos
+- Anyone wanting AI-powered photo guidance
 
 **Go Bananas!** For 48 hours, starting on September 6, 2025, we are unlocking a special 48-hour free tier of the Gemini API, putting Gemini 2.5 Flash Image Preview (aka Nano Banana), our state-of-the-art image model, into your hands. In collaboration with Fal and ElevenLabs, we're giving over $400,000 of prizes! We're looking forward to seeing what you build in the next two days!
 
@@ -17,16 +38,68 @@ Nano Banana is about dynamic creation. Edit with words, blend realities, and acc
 - [🗓️ Timeline \& Prizes](#️-timeline--prizes)
 - [💬 Getting Help \& Discussion](#-getting-help--discussion)
 
-## 🚀 Get Started in 3 Steps
+## 🚀 Quick Start
 
-1.  **Get Your Free API Key**
-    *   Follow the **[API Key Guide](./guides/01-getting-your-api-key.ipynb)** to create your API key to access Nano Banana on the Gemini API. 
+### 1. Get API Keys
+- **OpenAI API Key**: Get from [OpenAI Platform](https://platform.openai.com/api-keys)
+- **Gemini API Key**: Get from [Google AI Studio](https://aistudio.google.com/app/apikey)
+- Follow the **[API Key Guide](./guides/01-getting-your-api-key.ipynb)** for Nano Banana access
 
-2.  **Explore the Resources**
-    *   Clone this repository to access code examples and check out the external links for inspiration and documentation.
+### 2. Run the App
+```bash
+# Clone and serve
+git clone <repository-url>
+cd pose-pilot
 
-3.  **Submit Your Project on Kaggle**
-    *   When you're ready, head over to the **[Official Kaggle Competition Page](https://www.kaggle.com/competitions/banana)** to submit your project before the deadline.
+# Option 1: Python HTTPS server (recommended for mobile)
+python server.py
+
+# Option 2: Simple HTTP server  
+python -m http.server 8000
+
+# Option 3: Node.js
+npx serve .
+```
+
+### 3. Test on Mobile
+- Open `https://localhost:8443` (or your server URL)
+- Accept certificate warning
+- Allow camera permissions
+- Add to home screen for full app experience
+
+### 4. Submit to Competition
+When ready, submit to the **[Official Kaggle Competition](https://www.kaggle.com/competitions/banana)**
+
+## 📱 How It Works
+
+1. **📸 Capture Photo** - Use your phone's camera to take a photo
+2. **🤖 AI Analysis** - ChatGPT analyzes composition, lighting, and pose
+3. **💡 Get Suggestions** - Receive 5 detailed improvement recommendations
+4. **✨ See Examples** - Nano Banana generates improved photo examples
+5. **📈 Improve Skills** - Apply suggestions to take better photos
+
+## 🛠️ Technical Stack
+
+- **Frontend**: Pure HTML5, CSS3, JavaScript (ES6+)
+- **AI APIs**: OpenAI GPT-4 Vision + Google Gemini (Nano Banana)  
+- **Camera**: MediaDevices API with mobile optimization
+- **PWA**: Service Worker + Web App Manifest
+- **Mobile**: iOS Safari optimized, responsive design
+
+## 📋 Project Structure
+
+```
+pose-pilot/
+├── index.html          # Main app interface
+├── styles.css          # Mobile-optimized styling  
+├── app.js             # Core application logic
+├── config.js          # API configuration
+├── manifest.json      # PWA manifest
+├── sw.js             # Service worker
+├── server.py         # HTTPS development server
+├── SETUP.md          # Detailed setup guide
+└── README.md         # This file
+```
 
 ## 🎯 The Challenge
 
