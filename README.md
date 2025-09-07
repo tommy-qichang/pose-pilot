@@ -126,9 +126,9 @@ Compete for your share of over **$400,000 in prizes**!
 
 ## Notes About API Usage
 
-Please note the special tier for the Gemini API (for all API users) - will allow **100 requests per project per day.** 
+Please note the special tier for the Gemini API (for all API users) - will allow **200 requests per project per day.** 
 
-Developers using a paid API key will pay for all of their usage. To get the free 100 generations, please use a free tier API key.
+Developers using a paid API key will pay for all of their usage. To get the free 200 generations, please use a free tier API key.
 
 ## 💬 Getting Help & Discussion
 
