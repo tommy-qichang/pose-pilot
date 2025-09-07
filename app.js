@@ -1,10 +1,5 @@
-// Pose Pilot - AI Photo Guidance App
 class PosePilotApp {
     constructor() {
-        this.currentStream = null;
-        this.capturedImageData = null;
-        this.suggestions = [];
-        
         // Load API Configuration from config.js or use defaults
         this.config = {
             openaiApiKey: window.CONFIG?.OPENAI_API_KEY || '', 
@@ -12,88 +7,31 @@ class PosePilotApp {
             chatgptModel: window.CONFIG?.OPENAI_MODEL || 'gpt-4o',
             demoMode: window.CONFIG?.DEMO_MODE || false
         };
+
+        // App state
+        this.stream = null;
+        this.currentCamera = 'user'; // 'user' for front, 'environment' for back
+        this.capturedImageData = null;
+        this.suggestions = [];
+        this.generatedImages = [];
+        this.currentImageIndex = 0; // 0 = original, 1+ = AI generated
+        this.isProcessing = false;
+
+        // Initialize app
+        this.init();
+    }
+
+    async init() {
+        console.log('🚀 Initializing Pose Pilot...');
         
-        this.initializeApp();
-    }
-
-    initializeApp() {
-        this.setupEventListeners();
-        this.setupMobileOptimizations();
+        // Check API keys
         this.checkApiKeys();
-    }
-
-    setupMobileOptimizations() {
-        // Prevent zoom on double tap
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function (event) {
-            const now = (new Date()).getTime();
-            if (now - lastTouchEnd <= 300) {
-                event.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-
-        // Handle viewport changes (especially for iOS Safari)
-        const setViewportHeight = () => {
-            const vh = window.innerHeight * 0.01;
-            document.documentElement.style.setProperty('--vh', `${vh}px`);
-        };
-
-        setViewportHeight();
-        window.addEventListener('resize', setViewportHeight);
-        window.addEventListener('orientationchange', () => {
-            setTimeout(setViewportHeight, 100);
-        });
-
-        // Prevent pull-to-refresh on mobile
-        document.body.addEventListener('touchstart', e => {
-            if (e.touches.length !== 1) { return; }
-            const y = e.touches[0].clientY;
-            if (y <= 10) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        document.body.addEventListener('touchmove', e => {
-            if (e.touches.length !== 1) { return; }
-            const y = e.touches[0].clientY;
-            if (y <= 10) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        // Wake lock to prevent screen from sleeping during photo capture
-        this.setupWakeLock();
-    }
-
-    async setupWakeLock() {
-        if ('wakeLock' in navigator) {
-            try {
-                this.wakeLock = null;
-                
-                // Request wake lock when camera starts
-                document.getElementById('start-camera-btn').addEventListener('click', async () => {
-                    try {
-                        this.wakeLock = await navigator.wakeLock.request('screen');
-                        console.log('Screen wake lock activated');
-                    } catch (err) {
-                        console.log('Wake lock failed:', err);
-                    }
-                });
-
-                // Release wake lock when photo is captured or app loses focus
-                document.addEventListener('visibilitychange', () => {
-                    if (this.wakeLock !== null && document.visibilityState === 'hidden') {
-                        this.wakeLock.release();
-                        this.wakeLock = null;
-                        console.log('Screen wake lock released');
-                    }
-                });
-                
-            } catch (err) {
-                console.log('Wake lock not supported:', err);
-            }
-        }
+        
+        // Set up event listeners
+        this.setupEventListeners();
+        
+        // Start camera
+        await this.startCamera();
     }
 
     checkApiKeys() {
@@ -114,240 +52,293 @@ class PosePilotApp {
     }
 
     showApiKeyPrompt() {
-        const modal = document.createElement('div');
-        modal.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-        `;
-        
-        modal.innerHTML = `
-            <div style="background: white; padding: 30px; border-radius: 16px; max-width: 400px; width: 100%;">
-                <h2 style="margin-bottom: 20px; color: #333;">🔑 API Keys Required</h2>
-                <p style="margin-bottom: 20px; color: #666;">To use Pose Pilot, you need to add your API keys:</p>
-                
-                <div style="margin-bottom: 15px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">OpenAI API Key:</label>
-                    <input type="password" id="openai-key" placeholder="sk-..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-                </div>
-                
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Gemini API Key:</label>
-                    <input type="password" id="gemini-key" placeholder="AIza..." style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px;">
-                </div>
-                
-                <div style="display: flex; gap: 10px;">
-                    <button id="save-keys" style="flex: 1; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; font-weight: 600;">Save Keys</button>
-                    <button id="demo-mode" style="flex: 1; padding: 12px; background: #ccc; color: #666; border: none; border-radius: 8px; font-weight: 600;">Demo Mode</button>
-                </div>
-                
-                <p style="margin-top: 15px; font-size: 12px; color: #999;">Keys are stored locally and never sent to our servers.</p>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        document.getElementById('save-keys').onclick = () => {
-            const openaiKey = document.getElementById('openai-key').value;
-            const geminiKey = document.getElementById('gemini-key').value;
-            
-            if (openaiKey && geminiKey) {
-                this.config.openaiApiKey = openaiKey;
-                this.config.geminiApiKey = geminiKey;
-                localStorage.setItem('posepilot_openai_key', openaiKey);
-                localStorage.setItem('posepilot_gemini_key', geminiKey);
-                document.body.removeChild(modal);
-            } else {
-                alert('Please enter both API keys');
-            }
-        };
-        
-        document.getElementById('demo-mode').onclick = () => {
-            this.config.demoMode = true;
-            document.body.removeChild(modal);
-        };
-        
-        // Load saved keys
-        const savedOpenAI = localStorage.getItem('posepilot_openai_key');
-        const savedGemini = localStorage.getItem('posepilot_gemini_key');
-        if (savedOpenAI) document.getElementById('openai-key').value = savedOpenAI;
-        if (savedGemini) document.getElementById('gemini-key').value = savedGemini;
+        const modal = document.getElementById('api-key-modal');
+        modal.style.display = 'flex';
     }
 
     setupEventListeners() {
-        // Camera controls
-        document.getElementById('start-camera-btn').addEventListener('click', () => this.startCamera());
-        document.getElementById('capture-btn').addEventListener('click', () => this.capturePhoto());
-        document.getElementById('retake-btn').addEventListener('click', () => this.retakePhoto());
-        
-        // AI analysis
-        document.getElementById('analyze-btn').addEventListener('click', () => this.analyzePhoto());
+        // Camera switch
+        document.getElementById('camera-switch').addEventListener('click', () => {
+            this.switchCamera();
+        });
+
+        // Capture button
+        document.getElementById('capture-btn').addEventListener('click', () => {
+            if (this.capturedImageData) {
+                this.retakePhoto();
+            } else {
+                this.capturePhoto();
+            }
+        });
+
+        // Upload button
+        document.getElementById('upload-btn').addEventListener('click', () => {
+            document.getElementById('file-input').click();
+        });
+
+        // File input
+        document.getElementById('file-input').addEventListener('change', (e) => {
+            this.handleFileUpload(e);
+        });
+
+        // PosePilot button
+        document.getElementById('pose-pilot-btn').addEventListener('click', () => {
+            if (!this.isProcessing && this.capturedImageData) {
+                if (this.generatedImages.length === 0) {
+                    this.startAIProcessing();
+                } else {
+                    this.cycleToNextImage();
+                }
+            }
+        });
+
+        // Back to original button
+        document.getElementById('back-to-original').addEventListener('click', () => {
+            this.showOriginalPhoto();
+        });
+
+        // API Key modal
+        document.getElementById('save-keys-btn').addEventListener('click', () => {
+            this.saveApiKeys();
+        });
+
+        document.getElementById('demo-mode-btn').addEventListener('click', () => {
+            this.enableDemoMode();
+        });
+
+        // Prevent default touch behaviors
+        document.addEventListener('touchmove', (e) => {
+            if (e.target.tagName !== 'INPUT') {
+                e.preventDefault();
+            }
+}, { passive: false });
     }
 
     async startCamera() {
         try {
-            // Try back camera first, fallback to front camera
-            let constraints = {
+            console.log('📹 Starting camera...');
+            
+            if (this.stream) {
+                this.stream.getTracks().forEach(track => track.stop());
+            }
+
+            const constraints = {
                 video: {
-                    facingMode: { exact: 'environment' },
-                    width: { ideal: 1280, max: 1920 },
-                    height: { ideal: 720, max: 1080 }
+                    facingMode: this.currentCamera,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 }
                 }
             };
 
-            try {
-                this.currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-            } catch (backCameraError) {
-                console.log('Back camera not available, trying front camera');
-                constraints.video.facingMode = 'user';
-                this.currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-            }
-
-            const videoElement = document.getElementById('camera-preview');
-            videoElement.srcObject = this.currentStream;
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+            const video = document.getElementById('camera-preview');
+            video.srcObject = this.stream;
             
-            // Wait for video to be ready
-            await new Promise((resolve) => {
-                videoElement.onloadedmetadata = resolve;
-            });
-            
-            // Update UI
-            document.getElementById('start-camera-btn').style.display = 'none';
-            document.getElementById('capture-btn').style.display = 'inline-flex';
-            
+            console.log('✅ Camera started successfully');
         } catch (error) {
-            console.error('Error accessing camera:', error);
-            this.showCameraError(error);
+            console.error('❌ Camera error:', error);
+            this.showError('Camera access denied. Please allow camera permissions.');
         }
     }
 
-    showCameraError(error) {
-        let message = 'Unable to access camera. ';
+    async switchCamera() {
+        this.currentCamera = this.currentCamera === 'user' ? 'environment' : 'user';
+        await this.startCamera();
+    }
+
+    handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
         
-        if (error.name === 'NotAllowedError') {
-            message += 'Please allow camera permissions and try again.';
-        } else if (error.name === 'NotFoundError') {
-            message += 'No camera found on this device.';
-        } else if (error.name === 'NotSupportedError') {
-            message += 'Camera not supported by this browser.';
-        } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-            message += 'Camera requires HTTPS connection.';
-        } else {
-            message += 'Please check your camera settings and try again.';
+        // Check if it's an image
+        if (!file.type.startsWith('image/')) {
+            this.showError('Please select an image file');
+            return;
         }
         
-        alert(message);
+        // Check file size (limit to 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            this.showError('Image file too large. Please select a file under 10MB');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.processUploadedImage(e.target.result);
+        };
+        reader.readAsDataURL(file);
+        
+        // Clear the input so the same file can be selected again
+        event.target.value = '';
+        
+        console.log('📁 File uploaded:', file.name);
+    }
+
+    processUploadedImage(dataUrl) {
+        const video = document.getElementById('camera-preview');
+        const capturedImage = document.getElementById('captured-image');
+        const aiGeneratedImage = document.getElementById('ai-generated-image');
+        
+        // Reset state
+        this.suggestions = [];
+        this.generatedImages = [];
+        this.poseIQ = null;
+        this.currentImageIndex = 0;
+        this.isProcessing = false;
+        
+        // Set the uploaded image as captured image
+        this.capturedImageData = dataUrl;
+        capturedImage.src = dataUrl;
+        
+        // Show uploaded image
+        video.style.display = 'none';
+        capturedImage.style.display = 'block';
+        aiGeneratedImage.style.display = 'none';
+        
+        // Update UI
+        this.updateCaptureButton();
+        this.updatePosePilotButton();
+        this.hideBackButton();
+        this.hidePoseIQ();
+        
+        console.log('📸 Image uploaded and processed');
+        
+        // Automatically start AI processing
+        setTimeout(() => {
+            this.startAIProcessing();
+        }, 500);
     }
 
     capturePhoto() {
         const video = document.getElementById('camera-preview');
         const canvas = document.getElementById('photo-canvas');
-        const ctx = canvas.getContext('2d');
+        const capturedImage = document.getElementById('captured-image');
         
-        // Set canvas dimensions to match video
+        // Set canvas size to match video
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
         
-        // Draw the video frame to canvas
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Draw video frame to canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0);
         
         // Convert to data URL
         this.capturedImageData = canvas.toDataURL('image/jpeg', 0.8);
         
-        // Display captured image
-        const capturedPhoto = document.getElementById('captured-photo');
-        const capturedImage = document.getElementById('captured-image');
+        // Show captured image
         capturedImage.src = this.capturedImageData;
-        capturedPhoto.style.display = 'block';
-        
-        // Hide video and update controls
+        capturedImage.style.display = 'block';
         video.style.display = 'none';
-        document.getElementById('capture-btn').style.display = 'none';
-        document.getElementById('retake-btn').style.display = 'inline-flex';
         
-        // Show AI section
-        document.getElementById('ai-section').style.display = 'block';
-        document.getElementById('ai-section').classList.add('fade-in');
+        // Update UI
+        this.updateCaptureButton();
+        this.updatePosePilotButton();
         
-        // Stop camera stream
-        if (this.currentStream) {
-            this.currentStream.getTracks().forEach(track => track.stop());
-        }
+        console.log('📸 Photo captured');
+        
+        // Automatically start AI processing
+        setTimeout(() => {
+            this.startAIProcessing();
+        }, 500); // Small delay to show the captured photo first
     }
 
     retakePhoto() {
-        // Reset UI
-        document.getElementById('camera-preview').style.display = 'block';
-        document.getElementById('captured-photo').style.display = 'none';
-        document.getElementById('retake-btn').style.display = 'none';
-        document.getElementById('ai-section').style.display = 'none';
-        document.getElementById('suggestions-section').style.display = 'none';
-        document.getElementById('generated-photos-section').style.display = 'none';
+        const video = document.getElementById('camera-preview');
+        const capturedImage = document.getElementById('captured-image');
+        const aiGeneratedImage = document.getElementById('ai-generated-image');
         
-        // Restart camera
-        this.startCamera();
+        // Reset state
+        this.capturedImageData = null;
+        this.suggestions = [];
+        this.generatedImages = [];
+        this.poseIQ = null;
+        this.currentImageIndex = 0;
+        this.isProcessing = false;
+        
+        // Show camera feed
+        video.style.display = 'block';
+        capturedImage.style.display = 'none';
+        aiGeneratedImage.style.display = 'none';
+        
+        // Update UI
+        this.updateCaptureButton();
+        this.updatePosePilotButton();
+        this.hideBackButton();
+        this.hidePoseIQ();
+        
+        console.log('🔄 Photo retaken');
     }
 
-    async analyzePhoto() {
-        if (!this.capturedImageData) {
-            alert('Please capture a photo first');
-            return;
-        }
-
-        // Show loading
-        document.getElementById('loading-spinner').style.display = 'block';
-        document.getElementById('analyze-btn').disabled = true;
-
+    async startAIProcessing() {
+        if (this.isProcessing) return;
+        
+        this.isProcessing = true;
+        this.showPosePilotLoading();
+        
         try {
-            if (this.config.demoMode) {
-                // Demo mode with mock data
-                await this.showDemoSuggestions();
-            } else {
-                // Real API calls
-                await this.getChatGPTSuggestions();
-            }
+            // Get AI suggestions
+            await this.getChatGPTSuggestions();
+            
+            // Generate AI images
+            await this.generateAIImages();
+            
+            // Show first AI image
+            this.showAIImage(0);
+            
         } catch (error) {
-            console.error('Error analyzing photo:', error);
-            alert('Error analyzing photo. Please try again.');
+            console.error('❌ AI processing error:', error);
+            this.showError('AI processing failed. Please try again.');
         } finally {
-            document.getElementById('loading-spinner').style.display = 'none';
-            document.getElementById('analyze-btn').disabled = false;
+            this.isProcessing = false;
+            this.hidePosePilotLoading();
+            this.updatePosePilotButton();
         }
     }
 
     async getChatGPTSuggestions() {
-        const prompt = `You are a professional photography coach. Analyze this photo and provide exactly 2 specific, actionable suggestions to improve the composition, pose, and overall quality. 
+        const prompt = `You are a professional photography coach. Analyze this photo and provide:
 
-For each suggestion, provide:
-1. A clear title (max 6 words)
-2. Camera View & Position advice
-3. Object Interaction suggestions
-4. Lighting & Exposure tips
-5. Background & Depth recommendations
+1. A PoseIQ score (0-100) with a brief comment about what's working well
+2. Exactly 3 specific suggestions, one for each category:
 
-Format your response as a JSON array with this structure:
-[
-  {
-    "title": "Suggestion Title",
-    "cameraView": "Camera positioning advice",
-    "interaction": "How to interact with objects/environment",
-    "lighting": "Lighting and exposure guidance",
-    "background": "Background and depth recommendations"
-  }
-]
+**Angle**: Adjust the camera or face angle, or body position—such as shooting from a low angle for a powerful stance, tilting the face three-quarters toward the light, or zooming in for intimate detail—to enhance composition, depth, and perspective.
 
-Be specific, practical, and focus on improvements that would make a noticeable difference in the photo quality.`;
+**Interaction**: Encourage the subject to engage with their environment or others—like pointing at a landmark, holding a prop, reaching toward the light, or making eye contact with a companion—to add storytelling and emotion to the frame.
+
+**Go Bold**: Prompt the subject to step outside their comfort zone with expressive movements, dynamic gestures, or unconventional poses—like mid-jump, dramatic fabric swirls, or asymmetric balance—for a striking, unforgettable shot.
+
+Format your response as JSON:
+{
+  "poseIQ": {
+    "score": 87,
+    "comment": "Great symmetry!"
+  },
+  "suggestions": [
+    {
+      "type": "angle",
+      "title": "Lower Camera Angle",
+      "description": "Specific angle advice...",
+      "scoreIncrease": 8
+    },
+    {
+      "type": "interaction",
+      "title": "Point at Landmark",
+      "description": "Specific interaction advice...",
+      "scoreIncrease": 12
+    },
+    {
+      "type": "go-bold",
+      "title": "Jump Mid-Air",
+      "description": "Specific bold pose advice...",
+      "scoreIncrease": 15
+    }
+  ]
+}
+
+Be specific, practical, and focus on improvements that would create a more compelling photograph. Include realistic score increases (5-20 points) based on impact potential.`;
 
         try {
-            console.log('🤖 Calling ChatGPT API with key:', this.config.openaiApiKey ? 'Present' : 'Missing');
+            console.log('🤖 Calling ChatGPT API...');
             
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -379,143 +370,73 @@ Be specific, practical, and focus on improvements that would make a noticeable d
             });
 
             const data = await response.json();
-            console.log('📥 ChatGPT API response:', response.status, data);
+            console.log('📥 ChatGPT response:', data);
             
             if (data.choices && data.choices[0] && data.choices[0].message) {
                 const content = data.choices[0].message.content;
-                console.log('📝 Raw ChatGPT content:', content);
                 
-                try {
-                    // Extract JSON from markdown code blocks if present
-                    let jsonString = content.trim();
-                    
-                    // Remove markdown code blocks
-                    if (jsonString.startsWith('```json')) {
-                        // Remove opening ```json
-                        jsonString = jsonString.replace(/^```json\s*/, '');
-                        // Remove closing ```
-                        jsonString = jsonString.replace(/\s*```$/, '');
-                    } else if (jsonString.startsWith('```')) {
-                        // Remove opening ```
-                        jsonString = jsonString.replace(/^```\s*/, '');
-                        // Remove closing ```
-                        jsonString = jsonString.replace(/\s*```$/, '');
-                    }
-                    
-                    jsonString = jsonString.trim();
-                    console.log('📋 Extracted JSON:', jsonString);
-                    
-                    this.suggestions = JSON.parse(jsonString);
-                    console.log('✅ Parsed suggestions:', this.suggestions);
-                    await this.displaySuggestions();
-                    await this.generateExamplePhotos();
-                } catch (parseError) {
-                    console.error('❌ Error parsing suggestions:', parseError);
-                    console.log('📄 Failed content:', content);
-                    // Fallback to demo mode
-                    await this.showDemoSuggestions();
+                // Extract JSON from markdown code blocks if present
+                let jsonString = content.trim();
+                
+                if (jsonString.startsWith('```json')) {
+                    jsonString = jsonString.replace(/^```json\s*/, '');
+                    jsonString = jsonString.replace(/\s*```$/, '');
+                } else if (jsonString.startsWith('```')) {
+                    jsonString = jsonString.replace(/^```\s*/, '');
+                    jsonString = jsonString.replace(/\s*```$/, '');
                 }
+                
+                jsonString = jsonString.trim();
+                
+                const result = JSON.parse(jsonString);
+                console.log('✅ Parsed result:', result);
+                
+                // Extract PoseIQ and suggestions
+                this.poseIQ = result.poseIQ || { score: 75, comment: "Good photo!" };
+                this.suggestions = result.suggestions || [];
+                
+                // Show PoseIQ overlay
+                this.showPoseIQ();
             } else {
                 throw new Error('Invalid response from ChatGPT');
             }
         } catch (error) {
-            console.error('ChatGPT API error:', error);
-            // Fallback to demo mode
-            await this.showDemoSuggestions();
+            console.error('❌ ChatGPT error:', error);
+            // Use demo suggestions as fallback
+            this.poseIQ = { score: 78, comment: "Good potential!" };
+            this.suggestions = [
+                {
+                    type: "angle",
+                    title: "Three-Quarter Angle",
+                    description: "Lower the camera slightly and shoot from a three-quarter angle to create more depth and a flattering perspective.",
+                    scoreIncrease: 10
+                },
+                {
+                    type: "interaction",
+                    title: "Point at Background",
+                    description: "Try pointing at something interesting in the background or holding a meaningful object to add storytelling to your photo.",
+                    scoreIncrease: 12
+                },
+                {
+                    type: "go-bold",
+                    title: "Add Movement",
+                    description: "Try a mid-step pose or gentle hair flip to bring energy and life to the shot.",
+                    scoreIncrease: 15
+                }
+            ];
+            this.showPoseIQ();
         }
     }
 
-    async showDemoSuggestions() {
-        // Demo suggestions for when API keys are not available
-        this.suggestions = [
-            {
-                title: "Improve Camera Angle",
-                cameraView: "Lower your camera to eye level or slightly below for a more engaging perspective",
-                interaction: "Step closer to your subject and fill more of the frame",
-                lighting: "Move to face a window or light source for better illumination",
-                background: "Find a less cluttered background or use depth of field to blur it"
-            },
-            {
-                title: "Better Lighting Setup",
-                cameraView: "Shoot during golden hour (1 hour before sunset) for warm, soft light",
-                interaction: "Use a reflector or white surface to bounce light onto your subject",
-                lighting: "Avoid harsh overhead lighting that creates unflattering shadows",
-                background: "Position subject with light source at a 45-degree angle"
-            }
-        ];
-
-        await this.displaySuggestions();
-        await this.generateExamplePhotos();
-    }
-
-    async displaySuggestions() {
-        const container = document.getElementById('suggestions-container');
-        container.innerHTML = '';
-
-        this.suggestions.forEach((suggestion, index) => {
-            const card = document.createElement('div');
-            card.className = 'suggestion-card';
-            card.innerHTML = `
-                <div class="suggestion-title">${index + 1}. ${suggestion.title}</div>
-                <div class="suggestion-details">
-                    <div class="suggestion-detail">
-                        <strong>📷 Camera:</strong>
-                        <span>${suggestion.cameraView}</span>
-                    </div>
-                    <div class="suggestion-detail">
-                        <strong>🤝 Interaction:</strong>
-                        <span>${suggestion.interaction}</span>
-                    </div>
-                    <div class="suggestion-detail">
-                        <strong>💡 Lighting:</strong>
-                        <span>${suggestion.lighting}</span>
-                    </div>
-                    <div class="suggestion-detail">
-                        <strong>🎨 Background:</strong>
-                        <span>${suggestion.background}</span>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-
-        // Show suggestions section
-        document.getElementById('suggestions-section').style.display = 'block';
-        document.getElementById('suggestions-section').classList.add('slide-up');
-    }
-
-    async generateExamplePhotos() {
-        // Show generated photos section
-        document.getElementById('generated-photos-section').style.display = 'block';
-        document.getElementById('generation-loading').style.display = 'block';
-
-        if (this.config.demoMode || !this.config.geminiApiKey) {
-            // Show demo placeholders
-            setTimeout(() => {
-                this.showDemoGeneratedPhotos();
-            }, 2000);
-            return;
-        }
-
-        try {
-            await this.generateWithNanoBanana();
-        } catch (error) {
-            console.error('Error generating photos:', error);
-            this.showDemoGeneratedPhotos();
-        }
-    }
-
-    async generateWithNanoBanana() {
-        const container = document.getElementById('generated-photos-container');
+    async generateAIImages() {
+        console.log('🍌 Generating AI images...');
         
-        // Create prompts based on top 2 suggestions
-        const prompts = [
-            this.createNanoBananaPrompt(this.suggestions[0]),
-            this.createNanoBananaPrompt(this.suggestions[1])
-        ];
-
-        for (let i = 0; i < 2; i++) {
+        this.generatedImages = [];
+        
+        for (let i = 0; i < 3; i++) {
             try {
+                const prompt = this.createNanoBananaPrompt(this.suggestions[i]);
+                
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${this.config.geminiApiKey}`, {
                     method: 'POST',
                     headers: {
@@ -525,7 +446,7 @@ Be specific, practical, and focus on improvements that would make a noticeable d
                         contents: [{
                             parts: [
                                 {
-                                    text: prompts[i]
+                                    text: prompt
                                 },
                                 {
                                     inline_data: {
@@ -547,11 +468,9 @@ Be specific, practical, and focus on improvements that would make a noticeable d
                 console.log(`🍌 Nano Banana response ${i + 1}:`, data);
                 
                 if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-                    // Extract image data from Gemini response
                     const content = data.candidates[0].content;
                     let imageData = null;
                     
-                    // Look for image data in the parts array
                     if (content.parts) {
                         for (const part of content.parts) {
                             if (part.inlineData && part.inlineData.data) {
@@ -562,102 +481,276 @@ Be specific, practical, and focus on improvements that would make a noticeable d
                     }
                     
                     if (imageData) {
-                        // Convert base64 to data URL
                         const mimeType = content.parts.find(p => p.inlineData)?.inlineData?.mimeType || 'image/png';
                         const dataUrl = `data:${mimeType};base64,${imageData}`;
-                        this.displayGeneratedPhoto(i, dataUrl);
-                    } else {
-                        console.error('No image data found in response');
-                        this.displayGeneratedPhotoPlaceholder(i);
+                        this.generatedImages.push({
+                            url: dataUrl,
+                            suggestion: this.suggestions[i]
+                        });
                     }
-                } else {
-                    throw new Error('Invalid response from Nano Banana');
                 }
             } catch (error) {
-                console.error(`Error generating photo ${i + 1}:`, error);
-                this.displayGeneratedPhotoPlaceholder(i);
+                console.error(`❌ Error generating image ${i + 1}:`, error);
             }
         }
-
-        document.getElementById('generation-loading').style.display = 'none';
+        
+        console.log(`✅ Generated ${this.generatedImages.length} AI images`);
     }
 
     createNanoBananaPrompt(suggestion) {
-        return `Create an improved version of this photo following these specific guidelines:
+        const typeInstructions = {
+            interaction: "Focus on adding storytelling elements, environmental engagement, and emotional connection",
+            angle: "Emphasize improved camera positioning, perspective, and compositional depth", 
+            "go-bold": "Create dynamic movement, expressive gestures, and striking unconventional poses"
+        };
         
-Camera & Composition: ${suggestion.cameraView}
-Subject Interaction: ${suggestion.interaction}  
-Lighting: ${suggestion.lighting}
-Background: ${suggestion.background}
+        return `Create an improved version of this photo following this ${suggestion.type} guidance:
+
+${suggestion.description}
+
+${typeInstructions[suggestion.type] || "Focus on general improvements"}
 
 Generate a professional, high-quality photograph that demonstrates these improvements while maintaining the essence of the original image. Focus on realistic lighting, proper composition, and enhanced visual appeal.`;
     }
 
-    displayGeneratedPhoto(index, content) {
-        const container = document.getElementById('generated-photos-container');
-        const photoDiv = container.children[index] || document.createElement('div');
+    showAIImage(index) {
+        if (index < 0 || index >= this.generatedImages.length) return;
         
-        if (!photoDiv.parentNode) {
-            photoDiv.className = 'generated-photo';
-            container.appendChild(photoDiv);
-        }
+        const aiImage = document.getElementById('ai-generated-image');
+        const capturedImage = document.getElementById('captured-image');
         
-        // This would need to be adapted based on the actual Nano Banana API response format
-        photoDiv.innerHTML = `<img src="${content}" alt="AI Generated Example ${index + 1}">`;
+        aiImage.src = this.generatedImages[index].url;
+        aiImage.style.display = 'block';
+        capturedImage.style.display = 'none';
+        
+        this.currentImageIndex = index + 1; // +1 because 0 is original
+        this.showBackButton();
+        this.updatePosePilotButton();
+        this.updatePoseIQSuggestion();
     }
 
-    displayGeneratedPhotoPlaceholder(index) {
-        const container = document.getElementById('generated-photos-container');
-        const photoDiv = container.children[index] || document.createElement('div');
+    showOriginalPhoto() {
+        const aiImage = document.getElementById('ai-generated-image');
+        const capturedImage = document.getElementById('captured-image');
         
-        if (!photoDiv.parentNode) {
-            photoDiv.className = 'generated-photo';
-            container.appendChild(photoDiv);
-        }
+        aiImage.style.display = 'none';
+        capturedImage.style.display = 'block';
         
-        photoDiv.innerHTML = `
-            <div class="generated-photo-placeholder">
-                📸<br>
-                Example ${index + 1}<br>
-                <small>Generated photo would appear here</small>
-            </div>
-        `;
+        this.currentImageIndex = 0;
+        this.hideBackButton();
+        this.updatePosePilotButton();
+        this.updatePoseIQSuggestion();
     }
 
-    showDemoGeneratedPhotos() {
-        const container = document.getElementById('generated-photos-container');
-        container.innerHTML = '';
+    cycleToNextImage() {
+        if (this.generatedImages.length === 0) return;
         
-        for (let i = 0; i < 2; i++) {
-            const photoDiv = document.createElement('div');
-            photoDiv.className = 'generated-photo';
-            photoDiv.innerHTML = `
-                <div class="generated-photo-placeholder">
-                    ✨<br>
-                    AI Example ${i + 1}<br>
-                    <small>Enhanced photo based on suggestion ${i + 1}</small>
-                </div>
-            `;
-            container.appendChild(photoDiv);
+        if (this.currentImageIndex === 0) {
+            // Show first AI image
+            this.showAIImage(0);
+        } else if (this.currentImageIndex < this.generatedImages.length) {
+            // Show next AI image
+            this.showAIImage(this.currentImageIndex);
+        } else {
+            // Back to original
+            this.showOriginalPhoto();
+        }
+    }
+
+    updateCaptureButton() {
+        const captureBtn = document.getElementById('capture-btn');
+        const captureLabel = document.getElementById('capture-label');
+        
+        if (this.capturedImageData) {
+            captureBtn.innerHTML = '🔄';
+            captureLabel.textContent = 'Retake';
+        } else {
+            captureBtn.innerHTML = '📸';
+            captureLabel.textContent = 'Capture';
+        }
+    }
+
+    updatePosePilotButton() {
+        const btn = document.getElementById('pose-pilot-btn');
+        const label = document.getElementById('pose-pilot-label');
+        const icon = document.getElementById('pose-pilot-icon');
+        
+        // Remove all state classes
+        btn.classList.remove('processing', 'interaction', 'angle', 'go-bold', 'original');
+        
+        if (!this.capturedImageData) {
+            btn.disabled = true;
+            label.textContent = 'Take a photo first';
+            icon.textContent = '🤖';
+        } else if (this.isProcessing) {
+            btn.disabled = true;
+            btn.classList.add('processing');
+            label.textContent = 'Processing...';
+            icon.textContent = '⚡';
+        } else if (this.generatedImages.length === 0) {
+            btn.disabled = false;
+            label.textContent = 'Get AI suggestions';
+            icon.textContent = '🤖';
+        } else if (this.currentImageIndex === 0) {
+            btn.disabled = false;
+            const suggestion = this.suggestions[0];
+            const { className, emoji } = this.getSuggestionStyle(suggestion);
+            btn.classList.add(className);
+            label.textContent = this.capitalizeType(suggestion?.type) || 'Angle';
+            icon.textContent = emoji;
+        } else if (this.currentImageIndex < this.generatedImages.length) {
+            btn.disabled = false;
+            const suggestion = this.suggestions[this.currentImageIndex];
+            const { className, emoji } = this.getSuggestionStyle(suggestion);
+            btn.classList.add(className);
+            label.textContent = this.capitalizeType(suggestion?.type) || 'Suggestion';
+            icon.textContent = emoji;
+        } else {
+            btn.disabled = false;
+            btn.classList.add('original');
+            label.textContent = 'View original';
+            icon.textContent = '📷';
+        }
+    }
+
+    getSuggestionStyle(suggestion) {
+        if (!suggestion) return { className: 'interaction', emoji: '🤝' };
+        
+        const type = suggestion.type;
+        
+        switch (type) {
+            case 'interaction':
+                return { className: 'interaction', emoji: '🤝' };
+            case 'angle':
+                return { className: 'angle', emoji: '📐' };
+            case 'go-bold':
+                return { className: 'go-bold', emoji: '🚀' };
+            default:
+                return { className: 'interaction', emoji: '✨' };
+        }
+    }
+
+    capitalizeType(type) {
+        if (!type) return '';
+        
+        switch (type) {
+            case 'angle':
+                return 'Angle';
+            case 'interaction':
+                return 'Interaction';
+            case 'go-bold':
+                return 'Go Bold';
+            default:
+                return type.charAt(0).toUpperCase() + type.slice(1);
+        }
+    }
+
+    showPoseIQ() {
+        const overlay = document.getElementById('poseiq-overlay');
+        const number = document.getElementById('poseiq-number');
+        const comment = document.getElementById('poseiq-comment');
+        
+        if (this.poseIQ) {
+            number.textContent = this.poseIQ.score;
+            comment.textContent = this.poseIQ.comment;
+            overlay.style.display = 'block';
         }
         
-        document.getElementById('generation-loading').style.display = 'none';
+        this.updatePoseIQSuggestion();
+    }
+
+    updatePoseIQSuggestion() {
+        const suggestionDiv = document.getElementById('poseiq-suggestion');
+        const titleDiv = document.getElementById('suggestion-title');
+        const increaseDiv = document.getElementById('suggestion-increase');
+        
+        // Show suggestion info when viewing AI images
+        if (this.currentImageIndex > 0 && this.currentImageIndex <= this.suggestions.length) {
+            const suggestion = this.suggestions[this.currentImageIndex - 1];
+            if (suggestion) {
+                titleDiv.textContent = suggestion.title;
+                increaseDiv.textContent = `+${suggestion.scoreIncrease} points`;
+                suggestionDiv.style.display = 'block';
+            }
+        } else {
+            suggestionDiv.style.display = 'none';
+        }
+    }
+
+    hidePoseIQ() {
+        const overlay = document.getElementById('poseiq-overlay');
+        overlay.style.display = 'none';
+    }
+
+    showPosePilotLoading() {
+        const loading = document.getElementById('pose-pilot-loading');
+        const icon = document.getElementById('pose-pilot-icon');
+        
+        loading.style.display = 'flex';
+        icon.style.display = 'none';
+    }
+
+    hidePosePilotLoading() {
+        const loading = document.getElementById('pose-pilot-loading');
+        const icon = document.getElementById('pose-pilot-icon');
+        
+        loading.style.display = 'none';
+        icon.style.display = 'block';
+    }
+
+    showBackButton() {
+        const backBtn = document.getElementById('back-to-original');
+        backBtn.style.display = 'flex';
+    }
+
+    hideBackButton() {
+        const backBtn = document.getElementById('back-to-original');
+        backBtn.style.display = 'none';
+    }
+
+    saveApiKeys() {
+        const openaiKey = document.getElementById('openai-key-input').value.trim();
+        const geminiKey = document.getElementById('gemini-key-input').value.trim();
+        
+        if (openaiKey && geminiKey) {
+            this.config.openaiApiKey = openaiKey;
+            this.config.geminiApiKey = geminiKey;
+            
+            localStorage.setItem('posepilot_openai_key', openaiKey);
+            localStorage.setItem('posepilot_gemini_key', geminiKey);
+            
+            document.getElementById('api-key-modal').style.display = 'none';
+            console.log('✅ API keys saved');
+        } else {
+            this.showError('Please enter both API keys');
+        }
+    }
+
+    enableDemoMode() {
+        this.config.demoMode = true;
+        document.getElementById('api-key-modal').style.display = 'none';
+        console.log('🎭 Demo mode enabled');
+    }
+
+    showError(message) {
+        // Simple alert for now - could be improved with a custom modal
+        alert(message);
     }
 }
 
-// Initialize the app when DOM is loaded
+// Initialize app when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    new PosePilotApp();
+    window.posePilotApp = new PosePilotApp();
 });
 
-// Service Worker Registration for PWA
+// Register service worker for PWA
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
-            .then(registration => {
+            .then((registration) => {
                 console.log('SW registered: ', registration);
             })
-            .catch(registrationError => {
+            .catch((registrationError) => {
                 console.log('SW registration failed: ', registrationError);
             });
     });

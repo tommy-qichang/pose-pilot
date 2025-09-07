@@ -10,75 +10,94 @@
     <link rel="manifest" href="manifest.json">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header -->
-        <header class="app-header">
-            <h1>📸 Pose Pilot</h1>
-            <p>AI-Powered Photo Guidance</p>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Camera Section -->
-            <section class="camera-section">
-                <div class="camera-container">
-                    <video id="camera-preview" autoplay playsinline muted></video>
-                    <canvas id="photo-canvas" style="display: none;"></canvas>
-                    <div class="captured-photo" id="captured-photo" style="display: none;">
-                        <img id="captured-image" alt="Captured photo">
+    <div id="app" class="app-container">
+        <!-- Full Screen Camera Interface -->
+        <div id="camera-interface" class="camera-interface">
+            <!-- Camera Display -->
+            <div class="camera-display">
+                <video id="camera-preview" class="camera-video" autoplay muted playsinline></video>
+                <canvas id="photo-canvas" class="camera-canvas"></canvas>
+                <img id="captured-image" class="captured-image" style="display: none;">
+                <img id="ai-generated-image" class="ai-generated-image" style="display: none;">
+                
+                <!-- PoseIQ Score Overlay -->
+                <div id="poseiq-overlay" class="poseiq-overlay" style="display: none;">
+                    <div class="poseiq-score">
+                        <div class="poseiq-title">PoseIQ</div>
+                        <div class="poseiq-number" id="poseiq-number">87</div>
+                    </div>
+                    <div class="poseiq-comment" id="poseiq-comment">Great symmetry!</div>
+                    <div class="poseiq-suggestion" id="poseiq-suggestion" style="display: none;">
+                        <div class="suggestion-title" id="suggestion-title">Lower Camera Angle</div>
+                        <div class="suggestion-increase" id="suggestion-increase">+8 points</div>
                     </div>
                 </div>
-                
-                <div class="camera-controls">
-                    <button id="start-camera-btn" class="btn btn-primary">
-                        📷 Start Camera
-                    </button>
-                    <button id="capture-btn" class="btn btn-secondary" style="display: none;">
-                        📸 Capture Photo
-                    </button>
-                    <button id="retake-btn" class="btn btn-outline" style="display: none;">
-                        🔄 Retake
-                    </button>
-                </div>
-            </section>
-
-            <!-- AI Analysis Section -->
-            <section class="ai-section" id="ai-section" style="display: none;">
-                <button id="analyze-btn" class="btn btn-ai">
-                    🤖 Get AI Suggestions
+            </div>
+            
+            <!-- Top Controls -->
+            <div class="top-controls">
+                <button id="camera-switch" class="icon-btn">
+                    📱
                 </button>
+                <div class="app-title">&nbsp;</div>
+                <button id="back-to-original" class="icon-btn" style="display: none;">
+                    📷
+                </button>
+            </div>
+            
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <div class="button-group">
+                    <div class="button-label" id="capture-label">Capture</div>
+                    <button id="capture-btn" class="round-btn capture-btn">
+                        📸
+                    </button>
+                </div>
+                <div class="button-group">
+                    <div class="button-label" id="upload-label">Upload</div>
+                    <button id="upload-btn" class="round-btn upload-btn">
+                        📁
+                    </button>
+                    <input type="file" id="file-input" accept="image/*" style="display: none;">
+                </div>
+                <div class="button-group">
+                    <div class="button-label" id="pose-pilot-label">Take a photo first</div>
+                    <button id="pose-pilot-btn" class="round-btn pose-pilot-btn" disabled>
+                        <div class="btn-icon" id="pose-pilot-icon">🤖</div>
+                        <div class="loading-spinner" id="pose-pilot-loading" style="display: none;">
+                            <div class="spinner"></div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hidden Data Storage -->
+        <div id="suggestions-data" style="display: none;"></div>
+        <div id="generated-photos-data" style="display: none;"></div>
+
+        <!-- API Key Setup Modal -->
+        <div id="api-key-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h2>🔑 API Keys Required</h2>
+                <p>Please enter your API keys to use Pose Pilot:</p>
                 
-                <div class="loading-spinner" id="loading-spinner" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Analyzing your photo...</p>
+                <div class="input-group">
+                    <label for="openai-key-input">OpenAI API Key:</label>
+                    <input type="password" id="openai-key-input" placeholder="sk-...">
                 </div>
-            </section>
-
-            <!-- Suggestions Section -->
-            <section class="suggestions-section" id="suggestions-section" style="display: none;">
-                <h2>💡 AI Suggestions</h2>
-                <div class="suggestions-container" id="suggestions-container">
-                    <!-- Suggestions will be populated here -->
+                
+                <div class="input-group">
+                    <label for="gemini-key-input">Google Gemini API Key:</label>
+                    <input type="password" id="gemini-key-input" placeholder="AIza...">
                 </div>
-            </section>
-
-            <!-- Generated Photos Section -->
-            <section class="generated-photos-section" id="generated-photos-section" style="display: none;">
-                <h2>✨ AI Generated Examples</h2>
-                <div class="generated-photos-container" id="generated-photos-container">
-                    <!-- Generated photos will be populated here -->
+                
+                <div class="modal-buttons">
+                    <button id="save-keys-btn" class="primary-btn">Save Keys</button>
+                    <button id="demo-mode-btn" class="secondary-btn">Try Demo Mode</button>
                 </div>
-                <div class="generation-loading" id="generation-loading" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Generating example photos...</p>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="app-footer">
-            <p>Powered by ChatGPT & Nano Banana</p>
-        </footer>
+            </div>
+        </div>
     </div>
 
     <!-- Scripts -->
