@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pose Pilot - Test Page</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
+        .test-item {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #007AFF;
+        }
+        .success { border-left-color: #34C759; }
+        .warning { border-left-color: #FF9500; }
+        .error { border-left-color: #FF3B30; }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>📸 Pose Pilot - System Test</h1>
+    
+    <div class="test-item">
+        <h3>🌐 Browser Compatibility</h3>
+        <p id="browser-info">Checking...</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>📱 Mobile Features</h3>
+        <p id="mobile-features">Checking...</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>📷 Camera Support</h3>
+        <p id="camera-support">Checking...</p>
+        <button onclick="testCamera()">Test Camera Access</button>
+    </div>
+    
+    <div class="test-item">
+        <h3>🔒 HTTPS Status</h3>
+        <p id="https-status">Checking...</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>📦 PWA Support</h3>
+        <p id="pwa-support">Checking...</p>
+    </div>
+    
+    <div class="test-item">
+        <h3>🚀 Ready to Launch</h3>
+        <a href="index.html" style="text-decoration: none;">
+            <button style="background: #34C759; font-size: 16px; padding: 15px 30px;">
+                🚀 Open Pose Pilot
+            </button>
+        </a>
+    </div>
+
+    <script>
+        // Browser compatibility check
+        function checkBrowserCompatibility() {
+            const features = {
+                'getUserMedia': 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices,
+                'Canvas API': 'getContext' in document.createElement('canvas'),
+                'Service Worker': 'serviceWorker' in navigator,
+                'Web App Manifest': 'onbeforeinstallprompt' in window || window.matchMedia('(display-mode: standalone)').matches,
+                'Local Storage': 'localStorage' in window,
+                'Fetch API': 'fetch' in window
+            };
+            
+            const supported = Object.values(features).filter(Boolean).length;
+            const total = Object.keys(features).length;
+            
+            document.getElementById('browser-info').innerHTML = 
+                `${supported}/${total} features supported<br>` +
+                Object.entries(features).map(([key, value]) => 
+                    `${value ? '✅' : '❌'} ${key}`
+                ).join('<br>');
+        }
+
+        // Mobile features check
+        function checkMobileFeatures() {
+            const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const hasTouch = 'ontouchstart' in window;
+            const hasOrientation = 'orientation' in window;
+            const hasWakeLock = 'wakeLock' in navigator;
+            
+            document.getElementById('mobile-features').innerHTML = 
+                `${isMobile ? '✅' : '❌'} Mobile Device<br>` +
+                `${hasTouch ? '✅' : '❌'} Touch Support<br>` +
+                `${hasOrientation ? '✅' : '❌'} Orientation API<br>` +
+                `${hasWakeLock ? '✅' : '❌'} Wake Lock API`;
+        }
+
+        // Camera support check
+        function checkCameraSupport() {
+            if ('mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices) {
+                navigator.mediaDevices.enumerateDevices()
+                    .then(devices => {
+                        const cameras = devices.filter(device => device.kind === 'videoinput');
+                        document.getElementById('camera-support').innerHTML = 
+                            `✅ Camera API supported<br>📹 ${cameras.length} camera(s) available`;
+                    })
+                    .catch(() => {
+                        document.getElementById('camera-support').innerHTML = 
+                            '⚠️ Camera API supported but enumeration failed';
+                    });
+            } else {
+                document.getElementById('camera-support').innerHTML = '❌ Camera API not supported';
+            }
+        }
+
+        // Test camera access
+        async function testCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('camera-support').innerHTML += '<br>✅ Camera access granted!';
+                stream.getTracks().forEach(track => track.stop());
+            } catch (error) {
+                document.getElementById('camera-support').innerHTML += `<br>❌ Camera access denied: ${error.name}`;
+            }
+        }
+
+        // HTTPS status check
+        function checkHTTPS() {
+            const isHTTPS = location.protocol === 'https:';
+            const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+            
+            if (isHTTPS) {
+                document.getElementById('https-status').innerHTML = '✅ HTTPS enabled - Camera will work';
+            } else if (isLocalhost) {
+                document.getElementById('https-status').innerHTML = '⚠️ HTTP on localhost - Camera should work';
+            } else {
+                document.getElementById('https-status').innerHTML = '❌ HTTP - Camera may not work on mobile';
+            }
+        }
+
+        // PWA support check
+        function checkPWASupport() {
+            const hasServiceWorker = 'serviceWorker' in navigator;
+            const hasManifest = document.querySelector('link[rel="manifest"]') !== null;
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            
+            document.getElementById('pwa-support').innerHTML = 
+                `${hasServiceWorker ? '✅' : '❌'} Service Worker<br>` +
+                `${hasManifest ? '✅' : '❌'} Web App Manifest<br>` +
+                `${isStandalone ? '✅' : '❌'} Running as PWA`;
+        }
+
+        // Run all checks
+        checkBrowserCompatibility();
+        checkMobileFeatures();
+        checkCameraSupport();
+        checkHTTPS();
+        checkPWASupport();
+    </script>
+</body>
+</html>

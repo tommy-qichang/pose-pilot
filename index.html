@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Pose Pilot - AI Photo Guidance</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <h1>📸 Pose Pilot</h1>
+            <p>AI-Powered Photo Guidance</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Camera Section -->
+            <section class="camera-section">
+                <div class="camera-container">
+                    <video id="camera-preview" autoplay playsinline muted></video>
+                    <canvas id="photo-canvas" style="display: none;"></canvas>
+                    <div class="captured-photo" id="captured-photo" style="display: none;">
+                        <img id="captured-image" alt="Captured photo">
+                    </div>
+                </div>
+                
+                <div class="camera-controls">
+                    <button id="start-camera-btn" class="btn btn-primary">
+                        📷 Start Camera
+                    </button>
+                    <button id="capture-btn" class="btn btn-secondary" style="display: none;">
+                        📸 Capture Photo
+                    </button>
+                    <button id="retake-btn" class="btn btn-outline" style="display: none;">
+                        🔄 Retake
+                    </button>
+                </div>
+            </section>
+
+            <!-- AI Analysis Section -->
+            <section class="ai-section" id="ai-section" style="display: none;">
+                <button id="analyze-btn" class="btn btn-ai">
+                    🤖 Get AI Suggestions
+                </button>
+                
+                <div class="loading-spinner" id="loading-spinner" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Analyzing your photo...</p>
+                </div>
+            </section>
+
+            <!-- Suggestions Section -->
+            <section class="suggestions-section" id="suggestions-section" style="display: none;">
+                <h2>💡 AI Suggestions</h2>
+                <div class="suggestions-container" id="suggestions-container">
+                    <!-- Suggestions will be populated here -->
+                </div>
+            </section>
+
+            <!-- Generated Photos Section -->
+            <section class="generated-photos-section" id="generated-photos-section" style="display: none;">
+                <h2>✨ AI Generated Examples</h2>
+                <div class="generated-photos-container" id="generated-photos-container">
+                    <!-- Generated photos will be populated here -->
+                </div>
+                <div class="generation-loading" id="generation-loading" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Generating example photos...</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Powered by ChatGPT & Nano Banana</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
