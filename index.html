@@ -6,95 +6,216 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Pose Pilot - AI Photo Guidance</title>
-    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sf': ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    },
+                    colors: {
+                        'ios-blue': '#007AFF',
+                        'ios-green': '#34C759',
+                        'ios-red': '#FF3B30',
+                        'ios-orange': '#FF9500',
+                        'ios-purple': '#AF52DE',
+                        'ios-yellow': '#FFD60A',
+                        'ios-gray': {
+                            50: '#F2F2F7',
+                            100: '#E5E5EA',
+                            200: '#D1D1D6',
+                            300: '#C7C7CC',
+                            400: '#AEAEB2',
+                            500: '#8E8E93',
+                            600: '#636366',
+                            700: '#48484A',
+                            800: '#3A3A3C',
+                            900: '#1C1C1E',
+                        }
+                    },
+                    backdropBlur: {
+                        'ios': '20px',
+                    }
+                }
+            }
+        }
+    </script>
     <link rel="manifest" href="manifest.json">
 </head>
-<body>
-    <div id="app" class="app-container">
+<body class="font-sf bg-black text-white overflow-hidden select-none">
+    <div id="app" class="w-full h-screen relative">
         <!-- Full Screen Camera Interface -->
-        <div id="camera-interface" class="camera-interface">
+        <div id="camera-interface" class="w-full h-full flex flex-col">
             <!-- Camera Display -->
-            <div class="camera-display">
-                <video id="camera-preview" class="camera-video" autoplay muted playsinline></video>
-                <canvas id="photo-canvas" class="camera-canvas"></canvas>
-                <img id="captured-image" class="captured-image" style="display: none;">
-                <img id="ai-generated-image" class="ai-generated-image" style="display: none;">
+            <div class="flex-1 relative bg-black">
+                <video id="camera-preview" class="w-full h-full object-cover" autoplay muted playsinline></video>
+                <canvas id="photo-canvas" class="hidden"></canvas>
+                <img id="captured-image" class="w-full h-full object-cover absolute inset-0 hidden">
+                <img id="ai-generated-image" class="w-full h-full object-cover absolute inset-0 hidden">
                 
                 <!-- PoseIQ Score Overlay -->
-                <div id="poseiq-overlay" class="poseiq-overlay" style="display: none;">
-                    <div class="poseiq-score">
-                        <div class="poseiq-title">PoseIQ</div>
-                        <div class="poseiq-number" id="poseiq-number">87</div>
+                <div id="poseiq-overlay" class="absolute top-4 right-4 bg-black/70 backdrop-blur-md rounded-2xl p-4 text-center min-w-[120px] z-10 hidden" 
+                     style="top: max(16px, calc(16px + env(safe-area-inset-top))); right: max(16px, env(safe-area-inset-right));">
+                    <div class="flex items-center justify-center gap-2 mb-2">
+                        <div class="text-sm font-semibold text-ios-blue">PoseIQ</div>
+                        <div class="text-2xl font-bold text-ios-green" id="poseiq-number">87</div>
                     </div>
-                    <div class="poseiq-comment" id="poseiq-comment">Great symmetry!</div>
-                    <div class="poseiq-suggestion" id="poseiq-suggestion" style="display: none;">
-                        <div class="suggestion-title" id="suggestion-title">Lower Camera Angle</div>
-                        <div class="suggestion-increase" id="suggestion-increase">+8 points</div>
+                    <div class="text-xs text-ios-gray-100 mb-2" id="poseiq-comment">Great symmetry!</div>
+                    <div id="poseiq-suggestion" class="border-t border-white/20 pt-2 hidden">
+                        <div class="text-xs font-semibold text-ios-yellow mb-1" id="suggestion-title">Lower Camera Angle</div>
+                        <div class="text-xs font-medium text-ios-green" id="suggestion-increase">+8 points</div>
                     </div>
                 </div>
             </div>
             
             <!-- Top Controls -->
-            <div class="top-controls">
-                <button id="camera-switch" class="icon-btn">
-                    📱
+            <div class="absolute top-0 left-0 right-0 h-20 flex items-center justify-between px-5 bg-gradient-to-b from-black/60 to-transparent z-20"
+                 style="padding-top: max(20px, env(safe-area-inset-top));">
+                <button id="camera-switch" class="w-11 h-11 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center active:scale-95 transition-transform">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                        <path d="M14.828 14.828a4 4 0 0 1-5.656 0M9 10h1a4 4 0 0 1 4 4v1a1 1 0 0 1-1 1h-4c-.6 0-1-.4-1-1V10a1 1 0 0 1 1-1Z"/>
+                        <path d="m2 2 20 20M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"/>
+                    </svg>
                 </button>
-                <div class="app-title">&nbsp;</div>
-                <button id="back-to-original" class="icon-btn" style="display: none;">
-                    📷
-                </button>
+                <div class="flex-1"></div>
             </div>
             
             <!-- Bottom Controls -->
-            <div class="bottom-controls">
-                <div class="button-group">
-                    <div class="button-label" id="capture-label">Capture</div>
-                    <button id="capture-btn" class="round-btn capture-btn">
-                        📸
-                    </button>
-                </div>
-                <div class="button-group">
-                    <div class="button-label" id="upload-label">Upload</div>
-                    <button id="upload-btn" class="round-btn upload-btn">
-                        📁
-                    </button>
-                    <input type="file" id="file-input" accept="image/*" style="display: none;">
-                </div>
-                <div class="button-group">
-                    <div class="button-label" id="pose-pilot-label">Take a photo first</div>
-                    <button id="pose-pilot-btn" class="round-btn pose-pilot-btn" disabled>
-                        <div class="btn-icon" id="pose-pilot-icon">🤖</div>
-                        <div class="loading-spinner" id="pose-pilot-loading" style="display: none;">
-                            <div class="spinner"></div>
-                        </div>
-                    </button>
+            <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent z-20"
+                 style="padding-bottom: max(30px, calc(30px + env(safe-area-inset-bottom)));">
+                <div class="flex items-center justify-around px-5 py-8">
+                    <!-- Upload Button Group -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="text-sm font-medium text-white/90 drop-shadow min-h-[20px]" id="upload-label">Upload</div>
+                        <button id="upload-btn" class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all duration-200 shadow-lg">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                <polyline points="14,2 14,8 20,8"/>
+                            </svg>
+                        </button>
+                        <input type="file" id="file-input" accept="image/*" class="hidden">
+                    </div>
+                    
+                    <!-- Capture Button Group -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="text-sm font-medium text-white/90 drop-shadow min-h-[20px]" id="capture-label">Capture</div>
+                        <button id="capture-btn" class="w-16 h-16 rounded-full bg-white border-2 border-gray-300 flex items-center justify-center active:scale-95 transition-all duration-200 shadow-lg">
+                            <div class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
+                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                                    <circle cx="12" cy="13" r="4"/>
+                                </svg>
+                            </div>
+                        </button>
+                    </div>
+                    
+               <!-- PosePilot Button Group -->
+               <div class="flex flex-col items-center gap-3">
+                   <div class="text-sm font-medium text-white/90 drop-shadow min-h-[20px] text-center" id="pose-pilot-label">Take a photo first</div>
+                   <div class="relative">
+                       <!-- Segmented Ring -->
+                       <div class="absolute inset-0 w-20 h-20 -m-2">
+                           <!-- Original Segment (top) -->
+                           <div class="absolute inset-0 w-20 h-20 segment-ring" 
+                                id="segment-original"
+                                style="
+                                    background: conic-gradient(from 270deg, #374151 0deg, #374151 90deg, transparent 90deg);
+                                    border-radius: 50%;
+                                    mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    -webkit-mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    opacity: 0.7;
+                                    transition: opacity 0.3s ease;
+                                ">
+                           </div>
+                           
+                           <!-- Angle Segment (right) - FIRST suggestion -->
+                           <div class="absolute inset-0 w-20 h-20 segment-ring" 
+                                id="segment-angle"
+                                style="
+                                    background: conic-gradient(from 0deg, #007AFF 0deg, #007AFF 90deg, transparent 90deg);
+                                    border-radius: 50%;
+                                    mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    -webkit-mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    opacity: 0.7;
+                                    transition: opacity 0.3s ease;
+                                ">
+                           </div>
+                           
+                           <!-- Interaction Segment (bottom) - SECOND suggestion -->
+                           <div class="absolute inset-0 w-20 h-20 segment-ring" 
+                                id="segment-interaction"
+                                style="
+                                    background: conic-gradient(from 90deg, #34C759 0deg, #34C759 90deg, transparent 90deg);
+                                    border-radius: 50%;
+                                    mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    -webkit-mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    opacity: 0.7;
+                                    transition: opacity 0.3s ease;
+                                ">
+                           </div>
+                           
+                           <!-- Go Bold Segment (left) -->
+                           <div class="absolute inset-0 w-20 h-20 segment-ring" 
+                                id="segment-gobold"
+                                style="
+                                    background: conic-gradient(from 180deg, #AF52DE 0deg, #AF52DE 90deg, transparent 90deg);
+                                    border-radius: 50%;
+                                    mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    -webkit-mask: radial-gradient(circle at center, transparent 28px, black 32px);
+                                    opacity: 0.7;
+                                    transition: opacity 0.3s ease;
+                                ">
+                           </div>
+                       </div>
+                       
+                       <!-- AI Button -->
+                       <button id="pose-pilot-btn" class="w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all duration-200 shadow-lg disabled:opacity-50 relative z-10" disabled>
+                           <div class="btn-icon" id="pose-pilot-icon">
+                               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                                   <path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                               </svg>
+                           </div>
+                           <div class="loading-spinner absolute inset-0 flex items-center justify-center hidden z-20" id="pose-pilot-loading">
+                               <div class="w-8 h-8 border-2 border-white/50 border-t-white rounded-full animate-spin shadow-lg"></div>
+                           </div>
+                       </button>
+                   </div>
+               </div>
                 </div>
             </div>
         </div>
 
-        <!-- Hidden Data Storage -->
-        <div id="suggestions-data" style="display: none;"></div>
-        <div id="generated-photos-data" style="display: none;"></div>
-
         <!-- API Key Setup Modal -->
-        <div id="api-key-modal" class="modal" style="display: none;">
-            <div class="modal-content">
-                <h2>🔑 API Keys Required</h2>
-                <p>Please enter your API keys to use Pose Pilot:</p>
-                
-                <div class="input-group">
-                    <label for="openai-key-input">OpenAI API Key:</label>
-                    <input type="password" id="openai-key-input" placeholder="sk-...">
+        <div id="api-key-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-5 hidden">
+            <div class="bg-ios-gray-900 rounded-3xl p-8 max-w-sm w-full">
+                <div class="text-center mb-6">
+                    <div class="text-3xl mb-3">🔑</div>
+                    <h2 class="text-xl font-bold text-white mb-2">API Keys Required</h2>
+                    <p class="text-ios-gray-300 text-sm">Please enter your API keys to use Pose Pilot:</p>
                 </div>
                 
-                <div class="input-group">
-                    <label for="gemini-key-input">Google Gemini API Key:</label>
-                    <input type="password" id="gemini-key-input" placeholder="AIza...">
+                <div class="space-y-4">
+                    <div>
+                        <label for="openai-key-input" class="block text-sm font-medium text-white mb-2">OpenAI API Key:</label>
+                        <input type="password" id="openai-key-input" placeholder="sk-..." 
+                               class="w-full px-4 py-3 bg-ios-gray-800 border border-ios-gray-700 rounded-xl text-white placeholder-ios-gray-400 focus:outline-none focus:ring-2 focus:ring-ios-blue focus:border-transparent">
+                    </div>
+                    
+                    <div>
+                        <label for="gemini-key-input" class="block text-sm font-medium text-white mb-2">Google Gemini API Key:</label>
+                        <input type="password" id="gemini-key-input" placeholder="AIza..." 
+                               class="w-full px-4 py-3 bg-ios-gray-800 border border-ios-gray-700 rounded-xl text-white placeholder-ios-gray-400 focus:outline-none focus:ring-2 focus:ring-ios-blue focus:border-transparent">
+                    </div>
                 </div>
                 
-                <div class="modal-buttons">
-                    <button id="save-keys-btn" class="primary-btn">Save Keys</button>
-                    <button id="demo-mode-btn" class="secondary-btn">Try Demo Mode</button>
+                <div class="flex gap-3 mt-6">
+                    <button id="save-keys-btn" class="flex-1 bg-ios-blue text-white py-3 px-4 rounded-xl font-semibold active:scale-95 transition-transform">
+                        Save Keys
+                    </button>
+                    <button id="demo-mode-btn" class="flex-1 bg-ios-gray-700 text-white py-3 px-4 rounded-xl font-semibold active:scale-95 transition-transform">
+                        Try Demo
+                    </button>
                 </div>
             </div>
         </div>

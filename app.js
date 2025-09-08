@@ -53,7 +53,7 @@ class PosePilotApp {
 
     showApiKeyPrompt() {
         const modal = document.getElementById('api-key-modal');
-        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
     }
 
     setupEventListeners() {
@@ -92,10 +92,6 @@ class PosePilotApp {
             }
         });
 
-        // Back to original button
-        document.getElementById('back-to-original').addEventListener('click', () => {
-            this.showOriginalPhoto();
-        });
 
         // API Key modal
         document.getElementById('save-keys-btn').addEventListener('click', () => {
@@ -191,14 +187,13 @@ class PosePilotApp {
         capturedImage.src = dataUrl;
         
         // Show uploaded image
-        video.style.display = 'none';
-        capturedImage.style.display = 'block';
-        aiGeneratedImage.style.display = 'none';
+        video.classList.add('hidden');
+        capturedImage.classList.remove('hidden');
+        aiGeneratedImage.classList.add('hidden');
         
         // Update UI
         this.updateCaptureButton();
         this.updatePosePilotButton();
-        this.hideBackButton();
         this.hidePoseIQ();
         
         console.log('📸 Image uploaded and processed');
@@ -227,8 +222,8 @@ class PosePilotApp {
         
         // Show captured image
         capturedImage.src = this.capturedImageData;
-        capturedImage.style.display = 'block';
-        video.style.display = 'none';
+        capturedImage.classList.remove('hidden');
+        video.classList.add('hidden');
         
         // Update UI
         this.updateCaptureButton();
@@ -256,14 +251,13 @@ class PosePilotApp {
         this.isProcessing = false;
         
         // Show camera feed
-        video.style.display = 'block';
-        capturedImage.style.display = 'none';
-        aiGeneratedImage.style.display = 'none';
+        video.classList.remove('hidden');
+        capturedImage.classList.add('hidden');
+        aiGeneratedImage.classList.add('hidden');
         
         // Update UI
         this.updateCaptureButton();
         this.updatePosePilotButton();
-        this.hideBackButton();
         this.hidePoseIQ();
         
         console.log('🔄 Photo retaken');
@@ -273,7 +267,8 @@ class PosePilotApp {
         if (this.isProcessing) return;
         
         this.isProcessing = true;
-        this.showPosePilotLoading();
+        this.updatePosePilotButton(); // Update button to show processing state
+        this.showPosePilotLoading(); // Show loading spinner
         
         try {
             // Get AI suggestions
@@ -282,8 +277,9 @@ class PosePilotApp {
             // Generate AI images
             await this.generateAIImages();
             
-            // Show first AI image
+            // Show first AI image (Angle) and set current index
             this.showAIImage(0);
+            this.currentImageIndex = 1; // Start at Angle (index 1)
             
         } catch (error) {
             console.error('❌ AI processing error:', error);
@@ -429,42 +425,44 @@ Be specific, practical, and focus on improvements that would create a more compe
     }
 
     async generateAIImages() {
-        console.log('🍌 Generating AI images...');
+        console.log('🍌 Generating AI images in parallel...');
         
         this.generatedImages = [];
         
+        // Create all three requests simultaneously
+        const imagePromises = [];
+        
         for (let i = 0; i < 3; i++) {
-            try {
-                const prompt = this.createNanoBananaPrompt(this.suggestions[i]);
-                
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${this.config.geminiApiKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        contents: [{
-                            parts: [
-                                {
-                                    text: prompt
-                                },
-                                {
-                                    inline_data: {
-                                        mime_type: "image/jpeg",
-                                        data: this.capturedImageData.split(',')[1]
-                                    }
+            const prompt = this.createNanoBananaPrompt(this.suggestions[i]);
+            
+            const imagePromise = fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${this.config.geminiApiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            {
+                                text: prompt
+                            },
+                            {
+                                inline_data: {
+                                    mime_type: "image/jpeg",
+                                    data: this.capturedImageData.split(',')[1]
                                 }
-                            ]
-                        }],
-                        generationConfig: {
-                            temperature: 0.8,
-                            topK: 40,
-                            topP: 0.95,
-                        }
-                    })
-                });
-
-                const data = await response.json();
+                            }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: 0.8,
+                        topK: 40,
+                        topP: 0.95,
+                    }
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
                 console.log(`🍌 Nano Banana response ${i + 1}:`, data);
                 
                 if (data.candidates && data.candidates[0] && data.candidates[0].content) {
@@ -483,18 +481,50 @@ Be specific, practical, and focus on improvements that would create a more compe
                     if (imageData) {
                         const mimeType = content.parts.find(p => p.inlineData)?.inlineData?.mimeType || 'image/png';
                         const dataUrl = `data:${mimeType};base64,${imageData}`;
-                        this.generatedImages.push({
+                        console.log(`✅ Successfully generated image ${i + 1}/3`);
+                        return {
                             url: dataUrl,
-                            suggestion: this.suggestions[i]
-                        });
+                            suggestion: this.suggestions[i],
+                            index: i
+                        };
+                    } else {
+                        console.error(`❌ No image data found in response ${i + 1}`);
+                        return null;
                     }
+                } else {
+                    console.error(`❌ Invalid response from Nano Banana for image ${i + 1}`);
+                    return null;
                 }
-            } catch (error) {
+            })
+            .catch(error => {
                 console.error(`❌ Error generating image ${i + 1}:`, error);
-            }
+                return null;
+            });
+            
+            imagePromises.push(imagePromise);
         }
         
-        console.log(`✅ Generated ${this.generatedImages.length} AI images`);
+        console.log('🚀 Launched all 3 requests simultaneously...');
+        
+        // Wait for all requests to complete
+        try {
+            const results = await Promise.all(imagePromises);
+            
+            // Filter out null results and sort by original index to maintain order
+            const validResults = results.filter(result => result !== null);
+            validResults.sort((a, b) => a.index - b.index);
+            
+            // Store the generated images in the correct order
+            this.generatedImages = validResults.map(result => ({
+                url: result.url,
+                suggestion: result.suggestion
+            }));
+            
+            console.log(`✅ Completed parallel generation: ${this.generatedImages.length}/3 images successful`);
+            
+        } catch (error) {
+            console.error('❌ Error in parallel image generation:', error);
+        }
     }
 
     createNanoBananaPrompt(suggestion) {
@@ -520,11 +550,10 @@ Generate a professional, high-quality photograph that demonstrates these improve
         const capturedImage = document.getElementById('captured-image');
         
         aiImage.src = this.generatedImages[index].url;
-        aiImage.style.display = 'block';
-        capturedImage.style.display = 'none';
+        aiImage.classList.remove('hidden');
+        capturedImage.classList.add('hidden');
         
         this.currentImageIndex = index + 1; // +1 because 0 is original
-        this.showBackButton();
         this.updatePosePilotButton();
         this.updatePoseIQSuggestion();
     }
@@ -533,11 +562,10 @@ Generate a professional, high-quality photograph that demonstrates these improve
         const aiImage = document.getElementById('ai-generated-image');
         const capturedImage = document.getElementById('captured-image');
         
-        aiImage.style.display = 'none';
-        capturedImage.style.display = 'block';
+        aiImage.classList.add('hidden');
+        capturedImage.classList.remove('hidden');
         
         this.currentImageIndex = 0;
-        this.hideBackButton();
         this.updatePosePilotButton();
         this.updatePoseIQSuggestion();
     }
@@ -545,16 +573,25 @@ Generate a professional, high-quality photograph that demonstrates these improve
     cycleToNextImage() {
         if (this.generatedImages.length === 0) return;
         
-        if (this.currentImageIndex === 0) {
-            // Show first AI image
-            this.showAIImage(0);
-        } else if (this.currentImageIndex < this.generatedImages.length) {
-            // Show next AI image
-            this.showAIImage(this.currentImageIndex);
-        } else {
-            // Back to original
+        if (this.currentImageIndex === 1) {
+            // Currently showing Angle, next is Interaction
+            this.showAIImage(1);
+            this.currentImageIndex = 2;
+        } else if (this.currentImageIndex === 2) {
+            // Currently showing Interaction, next is Go Bold
+            this.showAIImage(2);
+            this.currentImageIndex = 3;
+        } else if (this.currentImageIndex === 3) {
+            // Currently showing Go Bold, next is Original
             this.showOriginalPhoto();
+            this.currentImageIndex = 4;
+        } else {
+            // Currently showing Original, restart cycle to Angle
+            this.showAIImage(0);
+            this.currentImageIndex = 1;
         }
+        
+        this.updatePosePilotButton();
     }
 
     updateCaptureButton() {
@@ -562,10 +599,28 @@ Generate a professional, high-quality photograph that demonstrates these improve
         const captureLabel = document.getElementById('capture-label');
         
         if (this.capturedImageData) {
-            captureBtn.innerHTML = '🔄';
+            // Show retake state
+            captureBtn.innerHTML = `
+                <div class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
+                        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                        <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                        <path d="M8 16H3v5"/>
+                    </svg>
+                </div>
+            `;
             captureLabel.textContent = 'Retake';
         } else {
-            captureBtn.innerHTML = '📸';
+            // Show camera state
+            captureBtn.innerHTML = `
+                <div class="w-12 h-12 rounded-full bg-white border border-gray-200 flex items-center justify-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-gray-600">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </div>
+            `;
             captureLabel.textContent = 'Capture';
         }
     }
@@ -574,59 +629,149 @@ Generate a professional, high-quality photograph that demonstrates these improve
         const btn = document.getElementById('pose-pilot-btn');
         const label = document.getElementById('pose-pilot-label');
         const icon = document.getElementById('pose-pilot-icon');
+        const loading = document.getElementById('pose-pilot-loading');
         
-        // Remove all state classes
-        btn.classList.remove('processing', 'interaction', 'angle', 'go-bold', 'original');
+        // Reset button style but keep the AI icon unchanged
+        btn.className = 'w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center active:scale-95 transition-all duration-200 shadow-lg disabled:opacity-50 relative z-10';
         
-        if (!this.capturedImageData) {
+        // Reset loading and icon visibility
+        if (loading) loading.classList.add('hidden');
+        if (icon) icon.classList.remove('hidden');
+        
+        if (!this.capturedImageData && !this.uploadedImageData) {
             btn.disabled = true;
             label.textContent = 'Take a photo first';
-            icon.textContent = '🤖';
+            this.resetSegmentRing();
         } else if (this.isProcessing) {
             btn.disabled = true;
-            btn.classList.add('processing');
             label.textContent = 'Processing...';
-            icon.textContent = '⚡';
+            // Don't reset loading/icon here - let showPosePilotLoading handle it
         } else if (this.generatedImages.length === 0) {
             btn.disabled = false;
             label.textContent = 'Get AI suggestions';
-            icon.textContent = '🤖';
-        } else if (this.currentImageIndex === 0) {
+            this.resetSegmentRing();
+        } else if (this.currentImageIndex === 1) {
+            // Showing Angle image
             btn.disabled = false;
-            const suggestion = this.suggestions[0];
-            const { className, emoji } = this.getSuggestionStyle(suggestion);
-            btn.classList.add(className);
-            label.textContent = this.capitalizeType(suggestion?.type) || 'Angle';
-            icon.textContent = emoji;
-        } else if (this.currentImageIndex < this.generatedImages.length) {
+            label.textContent = 'Angle';
+            this.activateSegment('angle');
+        } else if (this.currentImageIndex === 2) {
+            // Showing Interaction image
             btn.disabled = false;
-            const suggestion = this.suggestions[this.currentImageIndex];
-            const { className, emoji } = this.getSuggestionStyle(suggestion);
-            btn.classList.add(className);
-            label.textContent = this.capitalizeType(suggestion?.type) || 'Suggestion';
-            icon.textContent = emoji;
+            label.textContent = 'Interaction';
+            this.activateSegment('interaction');
+        } else if (this.currentImageIndex === 3) {
+            // Showing Go Bold image
+            btn.disabled = false;
+            label.textContent = 'Go Bold';
+            this.activateSegment('go-bold');
+        } else if (this.currentImageIndex === 4) {
+            // Showing Original image
+            btn.disabled = false;
+            label.textContent = 'Original';
+            this.activateSegment('original');
         } else {
+            // Default state
             btn.disabled = false;
-            btn.classList.add('original');
-            label.textContent = 'View original';
-            icon.textContent = '📷';
+            label.textContent = 'Get AI suggestions';
+            this.resetSegmentRing();
+        }
+    }
+    
+    resetSegmentRing() {
+        // Reset all segments to inactive state
+        const segments = ['segment-original', 'segment-angle', 'segment-interaction', 'segment-gobold'];
+        segments.forEach(segmentId => {
+            const segment = document.getElementById(segmentId);
+            if (segment) {
+                segment.style.opacity = '0.3';
+            }
+        });
+    }
+    
+    activateSegment(type) {
+        // First reset all segments
+        this.resetSegmentRing();
+        
+        // Map suggestion types to segment IDs
+        const segmentMap = {
+            'angle': 'segment-angle',
+            'interaction': 'segment-interaction', 
+            'go bold': 'segment-gobold',
+            'go-bold': 'segment-gobold',
+            'original': 'segment-original'
+        };
+        
+        const segmentId = segmentMap[type?.toLowerCase()];
+        if (segmentId) {
+            const segment = document.getElementById(segmentId);
+            if (segment) {
+                segment.style.opacity = '1';
+            }
         }
     }
 
     getSuggestionStyle(suggestion) {
-        if (!suggestion) return { className: 'interaction', emoji: '🤝' };
+        if (!suggestion) return { bgClass: 'bg-ios-purple', shadowClass: 'shadow-ios-purple/40', emoji: '🤝' };
         
         const type = suggestion.type;
         
         switch (type) {
             case 'interaction':
-                return { className: 'interaction', emoji: '🤝' };
+                return { bgClass: 'bg-ios-purple', shadowClass: 'shadow-ios-purple/40', emoji: '🤝' };
             case 'angle':
-                return { className: 'angle', emoji: '📐' };
+                return { bgClass: 'bg-ios-blue', shadowClass: 'shadow-ios-blue/40', emoji: '📐' };
             case 'go-bold':
-                return { className: 'go-bold', emoji: '🚀' };
+                return { bgClass: 'bg-ios-red', shadowClass: 'shadow-ios-red/40', emoji: '🚀' };
             default:
-                return { className: 'interaction', emoji: '✨' };
+                return { bgClass: 'bg-ios-purple', shadowClass: 'shadow-ios-purple/40', emoji: '✨' };
+        }
+    }
+
+    getSuggestionIcon(suggestion) {
+        if (!suggestion) {
+            return `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M8.5 14.5A4 4 0 0 0 12 16a4 4 0 0 0 3.5-1.5"/>
+                </svg>
+            `;
+        }
+        
+        const type = suggestion.type;
+        
+        switch (type) {
+            case 'interaction':
+                return `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                `;
+            case 'angle':
+                return `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                        <path d="M9 9 5 5v4h4"/>
+                        <path d="M15 15l4 4v-4h-4"/>
+                        <path d="M5 19h14"/>
+                        <path d="M19 5v14"/>
+                    </svg>
+                `;
+            case 'go-bold':
+                return `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                        <path d="M8 2v20l11-10L8 2z"/>
+                    </svg>
+                `;
+            default:
+                return `
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M8.5 14.5A4 4 0 0 0 12 16a4 4 0 0 0 3.5-1.5"/>
+                    </svg>
+                `;
         }
     }
 
@@ -653,7 +798,7 @@ Generate a professional, high-quality photograph that demonstrates these improve
         if (this.poseIQ) {
             number.textContent = this.poseIQ.score;
             comment.textContent = this.poseIQ.comment;
-            overlay.style.display = 'block';
+            overlay.classList.remove('hidden');
         }
         
         this.updatePoseIQSuggestion();
@@ -670,43 +815,50 @@ Generate a professional, high-quality photograph that demonstrates these improve
             if (suggestion) {
                 titleDiv.textContent = suggestion.title;
                 increaseDiv.textContent = `+${suggestion.scoreIncrease} points`;
-                suggestionDiv.style.display = 'block';
+                suggestionDiv.classList.remove('hidden');
             }
         } else {
-            suggestionDiv.style.display = 'none';
+            suggestionDiv.classList.add('hidden');
         }
     }
 
     hidePoseIQ() {
         const overlay = document.getElementById('poseiq-overlay');
-        overlay.style.display = 'none';
+        overlay.classList.add('hidden');
     }
 
     showPosePilotLoading() {
         const loading = document.getElementById('pose-pilot-loading');
         const icon = document.getElementById('pose-pilot-icon');
         
-        loading.style.display = 'flex';
-        icon.style.display = 'none';
+        console.log('🔄 Showing loading spinner...', { loading, icon });
+        if (loading) {
+            loading.classList.remove('hidden');
+            console.log('✅ Loading spinner shown');
+        } else {
+            console.error('❌ Loading spinner element not found');
+        }
+        if (icon) {
+            icon.classList.add('hidden');
+            console.log('✅ Icon hidden');
+        }
     }
 
     hidePosePilotLoading() {
         const loading = document.getElementById('pose-pilot-loading');
         const icon = document.getElementById('pose-pilot-icon');
         
-        loading.style.display = 'none';
-        icon.style.display = 'block';
+        console.log('🔄 Hiding loading spinner...', { loading, icon });
+        if (loading) {
+            loading.classList.add('hidden');
+            console.log('✅ Loading spinner hidden');
+        }
+        if (icon) {
+            icon.classList.remove('hidden');
+            console.log('✅ Icon shown');
+        }
     }
 
-    showBackButton() {
-        const backBtn = document.getElementById('back-to-original');
-        backBtn.style.display = 'flex';
-    }
-
-    hideBackButton() {
-        const backBtn = document.getElementById('back-to-original');
-        backBtn.style.display = 'none';
-    }
 
     saveApiKeys() {
         const openaiKey = document.getElementById('openai-key-input').value.trim();
@@ -719,7 +871,7 @@ Generate a professional, high-quality photograph that demonstrates these improve
             localStorage.setItem('posepilot_openai_key', openaiKey);
             localStorage.setItem('posepilot_gemini_key', geminiKey);
             
-            document.getElementById('api-key-modal').style.display = 'none';
+            document.getElementById('api-key-modal').classList.add('hidden');
             console.log('✅ API keys saved');
         } else {
             this.showError('Please enter both API keys');
@@ -728,7 +880,7 @@ Generate a professional, high-quality photograph that demonstrates these improve
 
     enableDemoMode() {
         this.config.demoMode = true;
-        document.getElementById('api-key-modal').style.display = 'none';
+        document.getElementById('api-key-modal').classList.add('hidden');
         console.log('🎭 Demo mode enabled');
     }
 
